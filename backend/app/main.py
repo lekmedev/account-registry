@@ -16,6 +16,21 @@ from app.core.services import seed_permissions
 logger = logging.getLogger("app")
 
 
+def _build_scheduler():
+    """Core-owned APScheduler instance handed to plugins via load_plugins(scheduler=...).
+
+    Plugins register their own cron jobs in tasks.py; core never names a plugin.
+    Returns None when APScheduler is unusable so the app still starts.
+    """
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+
+        return BackgroundScheduler()
+    except Exception as e:
+        logger.error("scheduler unavailable, background tasks disabled: %s", e)
+        return None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001
     # Idempotent core permission seed; never deletes.
@@ -25,13 +40,30 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
     except Exception:
         pass  # DB may be unreachable in test env; endpoints report via /health
     # Phase 3: discover + mount plugins (failures are skipped, app still starts).
+    # The scheduler is passed in so plugin tasks.py crons actually register.
+    scheduler = None
     try:
         from app.core import plugin_loader
 
-        plugin_loader.load_plugins(app)
+        scheduler = _build_scheduler()
+        plugin_loader.load_plugins(app, scheduler=scheduler)
     except Exception as e:
         logger.error("plugin loading failed: %s", e)
-    yield
+    # Start only after load_plugins so every plugin job is already registered.
+    if scheduler is not None:
+        try:
+            scheduler.start()
+            logger.info("scheduler started with %d job(s)", len(scheduler.get_jobs()))
+        except Exception as e:
+            logger.error("scheduler start failed: %s", e)
+    try:
+        yield
+    finally:
+        if scheduler is not None:
+            try:
+                scheduler.shutdown(wait=False)
+            except Exception as e:
+                logger.error("scheduler shutdown failed: %s", e)
 
 
 app = FastAPI(

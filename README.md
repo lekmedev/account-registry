@@ -87,8 +87,9 @@ zero edits: adding a folder is enough (frontend needs a rebuild only). Steps:
        op.drop_table("myplugin_log")
    ```
 8. **`tasks.py`** (optional) — expose `def register_tasks(scheduler): ...` to add
-   APScheduler jobs. Note: core currently calls `load_plugins(app)` without a
-   scheduler, so jobs register only when a scheduler is passed — see Known issues.
+   APScheduler jobs. Core builds one `BackgroundScheduler` at startup and passes it to
+   `load_plugins(app, scheduler=...)`, so your jobs register and run automatically.
+   A plugin without `tasks.py` is unaffected.
 9. **`frontend/index.tsx`** — export `routes` (React Router objects); the menu `path`
    in `plugin.json` must match one of them. Keep it **self-contained**: react-only,
    own fetch + own `can()` via `GET /api/v1/core/auth/me` (see
@@ -111,4 +112,5 @@ zero edits: adding a folder is enough (frontend needs a rebuild only). Steps:
 - Starlette TestClient deprecation warning (needs httpx2 later) — cosmetic.
 - SAWarning on double-import of plugin models (loader name + `plugins.*`) — harmless, last definition wins.
 - Seed admin password is dev-only; change `ADMIN_PASSWORD` in real deploys.
-- Core never passes a scheduler to `load_plugins`, so `tasks.py` cron jobs (e.g. opera expiry) only register when a scheduler exists — APScheduler wiring deferred.
+- The scheduler assumes a single backend process. Running `uvicorn --workers N` (N > 1)
+  starts one scheduler per worker, so a plugin cron would fire N times.

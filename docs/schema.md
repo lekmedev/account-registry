@@ -30,4 +30,4 @@ Postgres 16. Core migrations: `backend/alembic/versions/` (`0001_baseline`, `000
 
 - Timestamps are timezone-aware UTC (`_utcnow`); audit `created_at` is the only indexed timestamp.
 - `roles`/`privileges` on opera accounts are JSONB string lists (simplest per brief; no join tables).
-- `expiration_date` + `account_status=expired` are maintained by the plugin's daily 02:05 job (`expire_old_accounts`), each expiry writing an audit entry with actor None.
+- `expiration_date` + `account_status=expired` are maintained by the plugin's daily 02:05 job (`expire_old_accounts`), each expiry writing an audit entry with actor None. The job is an APScheduler cron registered by the plugin through core's scheduler (see `backend/app/main.py`); the trigger uses the process local timezone.

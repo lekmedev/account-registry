@@ -6,8 +6,9 @@ frontend, plugin architecture. Core knows nothing about account types.
 ## Start here (new session)
 
 1. Read `docs/BRIEF.md` (frozen spec, never edit) + `docs/PROGRESS.md` (handoff).
-2. All 7 build phases are DONE. Remaining optional work is in PROGRESS.md "Next phase":
-   APScheduler wiring, httpx2 TestClient fix, seed password for real deploys.
+2. All 7 build phases are DONE. APScheduler wiring is DONE too (core builds a
+   `BackgroundScheduler` and passes it to `load_plugins`). Remaining optional work is in
+   PROGRESS.md "Next phase": httpx2 TestClient fix, seed password for real deploys.
 3. Never scan the whole codebase — open only what the task needs.
 
 ## Run / test
@@ -22,7 +23,8 @@ cd frontend && npx tsc --noEmit && npm run build
 
 ## Repo map
 
-- `backend/app/main.py` — mounts `/api/v1/core`, calls `load_plugins(app)` at startup.
+- `backend/app/main.py` — mounts `/api/v1/core`, calls `load_plugins(app, scheduler=...)`
+  at startup; owns the one core scheduler.
 - `backend/app/core/` — auth, users, roles, departments, positions, audit, plugin_loader.
   **No plugin names here. Never add any.**
 - `plugins/<name>/` — `plugin.json`, `models.py`, `routes.py`, `permissions.py`,
