@@ -56,8 +56,8 @@ Pagination shape: `{"items": [...], "total": N, "page": P, "page_size": S}`.
 
 ## hello plugin (`/api/v1/plugins/hello`) — perms: `hello.view`
 
-- `GET /hello/ping` (public) → `{"plugin":"hello","message":"pong"}`.
-- `GET /hello/whoami` (needs `hello.view`) → `{"plugin":"hello","username":"..."}`.
+- `GET /api/v1/plugins/hello/ping` (public) → `{"plugin":"hello","message":"pong"}`.
+- `GET /api/v1/plugins/hello/whoami` (needs `hello.view`) → `{"plugin":"hello","username":"..."}`.
 
 ## opera_cloud plugin (`/api/v1/plugins/opera_cloud/accounts`)
 

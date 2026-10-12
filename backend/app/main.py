@@ -15,6 +15,15 @@ from app.core.services import seed_permissions
 
 logger = logging.getLogger("app")
 
+# uvicorn only configures its own loggers, so the "app" logger (and the plugin
+# loaders under it) would otherwise drop every INFO record. Attach one handler
+# if nobody else did — keeps `docker logs` useful without adding a dependency.
+if not logger.handlers and not logging.getLogger().handlers:
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    logger.addHandler(_h)
+    logger.setLevel(logging.INFO)
+
 
 def _build_scheduler():
     """Core-owned APScheduler instance handed to plugins via load_plugins(scheduler=...).
