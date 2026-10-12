@@ -472,15 +472,128 @@
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
 .spacer { flex: 1 1 auto; }
 
-/* ---------- RESPONSIVE ---------- */
+/* ---------- TOPBAR + SCRIM (mobile only) ---------- */
+.topbar { display: none; }
+.scrim { display: none; }
+.burger { display: none; }
+
+/* ---------- RESPONSIVE: sidebar thành drawer ---------- */
 @media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; }
-  .side {
-    position: static;
-    height: auto;
-    border-right: 0;
+  /*
+   * Rows tường minh: nếu để auto, min-height:100vh của .app sẽ chia phần
+   * thừa cho cả 2 row và topbar bị kéo giãn. Row 1 = topbar, row 2 = content.
+   */
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+  .main { padding: 1.25rem 1rem 2rem; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    height: 3.25rem;
+    padding: 0 .85rem;
+    background: var(--bg-surface);
     border-bottom: 1px solid var(--border-base);
   }
-  .side__foot { margin-top: .5rem; }
-  .main { padding: 1.25rem 1rem 2rem; }
+  .topbar__name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: var(--tracking-display);
+    color: var(--text-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Burger: 3 gạch -> X khi mở */
+  .burger {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-strong);
+    cursor: pointer;
+  }
+  .burger:hover { border-color: var(--border-hover); }
+  .burger svg { width: 20px; height: 20px; }
+  .burger line { transition: transform var(--t-ui), opacity var(--t-ui); transform-origin: center; }
+  .burger[data-open="true"] line:nth-child(1) { transform: translateY(4px) rotate(45deg); }
+  .burger[data-open="true"] line:nth-child(2) { opacity: 0; }
+  .burger[data-open="true"] line:nth-child(3) { transform: translateY(-4px) rotate(-45deg); }
+
+  /* Drawer: trượt từ trái, ẩn khỏi luồng truy cập khi đóng */
+  .side {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 80;
+    width: 264px;
+    max-width: 85vw;
+    height: 100dvh;
+    padding: 1rem .85rem;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-base);
+    box-shadow: none;
+    transform: translateX(-100%);
+    visibility: hidden;
+    /*
+     * visibility phải dùng "0s + delay", KHÔNG dùng duration .22s.
+     * Transition thật trên visibility khiến computed value kẹt ở trạng
+     * thái đầu => drawer không bao giờ trượt vào được.
+     * Delay .22s giữ drawer trượt xong rồi mới ẩn hẳn, đồng thời khiến
+     * link bị ẩn không tab tới được.
+     */
+    transition:
+      transform .22s var(--ease-brand),
+      visibility 0s linear .22s;
+  }
+  .side[data-open="true"] {
+    transform: none;
+    visibility: visible;
+    box-shadow: var(--shadow-tl);
+    transition:
+      transform .22s var(--ease-brand),
+      visibility 0s linear 0s;
+  }
+  .side__foot { margin-top: auto; }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, .5);
+    opacity: 0;
+    visibility: hidden;
+    cursor: pointer;
+    transition:
+      opacity .22s var(--ease-brand),
+      visibility 0s linear .22s;
+  }
+  .scrim[data-open="true"] {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity .22s var(--ease-brand),
+      visibility 0s linear 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side, .scrim, .burger line { transition-duration: .01ms; transition-delay: 0s; }
 }

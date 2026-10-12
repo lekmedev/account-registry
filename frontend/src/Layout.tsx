@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
 import { useAuth } from './auth'
@@ -41,7 +41,11 @@ function initials(name: string) {
 export function Layout() {
   const { me, logout, can } = useAuth()
   const nav = useNavigate()
+  const loc = useLocation()
   const { theme, toggle } = useThemeToggle()
+
+  const [navOpen, setNavOpen] = useState(false)
+  const burgerRef = useRef<HTMLButtonElement>(null)
 
   const menu = useQuery({
     queryKey: ['menu'],
@@ -50,9 +54,54 @@ export function Layout() {
 
   const plugins = (menu.data ?? []).filter((m) => can(m.permission ?? ''))
 
+  // Đóng drawer khi điều hướng, và trả focus về burger.
+  useEffect(() => { setNavOpen(false) }, [loc.pathname])
+
+  // Escape đóng drawer. Chỉ khi đang mở, không cạnh tranh phím tắt khác.
+  useEffect(() => {
+    if (!navOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setNavOpen(false)
+      burgerRef.current?.focus()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [navOpen])
+
   return (
     <div className="app">
-      <aside className="side">
+      <header className="topbar">
+        <button
+          ref={burgerRef}
+          type="button"
+          className="burger"
+          data-open={navOpen}
+          aria-label={navOpen ? 'Đóng menu' : 'Mở menu'}
+          aria-expanded={navOpen}
+          aria-controls="app-sidebar"
+          onClick={() => setNavOpen((o) => !o)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+               strokeLinecap="round" aria-hidden="true">
+            <line x1="4" y1="7" x2="20" y2="7" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="17" x2="20" y2="17" />
+          </svg>
+        </button>
+        <span className="topbar__name">Account Registry</span>
+      </header>
+
+      <button
+        type="button"
+        className="scrim"
+        data-open={navOpen}
+        tabIndex={navOpen ? 0 : -1}
+        aria-label="Đóng menu"
+        onClick={() => { setNavOpen(false); burgerRef.current?.focus() }}
+      />
+
+      <aside className="side" id="app-sidebar" data-open={navOpen}>
         <div className="side__brand">
           <span className="side__mark" aria-hidden="true">AR</span>
           <div>
@@ -67,6 +116,7 @@ export function Layout() {
             <NavLink
               key={l.to}
               to={l.to}
+              end={l.to === '/'}
               className={({ isActive }) => `navlink${isActive ? ' navlink--active' : ''}`}
             >
               <span className="navlink__dot" aria-hidden="true" />

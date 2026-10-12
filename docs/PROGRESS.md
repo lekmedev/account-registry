@@ -31,6 +31,9 @@
 - Dark mode is the default (`localStorage: ui-theme`; anything other than `light` = dark).
 - App-shell breakpoint is 900px, not the design system's 996px: a fixed 248px sidebar plus
   wide tables needs to collapse earlier than the landing-page grids do.
+- Under 900px the sidebar becomes an off-canvas drawer opened by a burger button in a sticky
+  topbar. Closes on link click, scrim tap and Escape (focus returns to the burger). It uses
+  `visibility` rather than transform alone, so hidden links cannot be reached by Tab.
 - Tokens in localStorage (simplest per brief §8); refresh rotation handled server-side.
 - Plugin routes render inside Layout (inherit sidebar); each plugin route gets nested `<Route>` for children.
 - `tsconfig` `noUnusedLocals:false` — avoids friction with generated plugin stubs.
