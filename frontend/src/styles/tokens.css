@@ -1,0 +1,172 @@
+/* ==========================================================
+   TOKENS — design system lấy từ autobrr.com
+   Core UI only. Plugin UI giữ nguyên (không import file này).
+   Toàn bộ màu / spacing / radius đều là CSS variable.
+   ========================================================== */
+
+:root {
+  /* ---------- SLATE ---------- */
+  --slate-1:  #fcfcfd;
+  --slate-2:  #f9f9fb;
+  --slate-3:  #f0f0f3;
+  --slate-4:  #e8e8ec;
+  --slate-5:  #e0e1e6;
+  --slate-6:  #d9d9e0;
+  --slate-7:  #cdced6;
+  --slate-8:  #b9bbc6;
+  --slate-9:  #8b8d98;
+  --slate-10: #80838d;
+  --slate-11: #60646c;
+  --slate-12: #1c2024;
+
+  /* ---------- BLUE ---------- */
+  --blue-3:   #e6f4fe;
+  --blue-6:   #acd8fc;
+  --blue-9:   #0090ff;
+  --blue-10:  #0588f0;
+  --blue-11:  #0569c0;
+
+  /* ---------- SEMANTIC ---------- */
+  --green-3:  #e6f6eb;
+  --green-6:  #adddc0;
+  --green-9:  #30a46c;
+  --green-11: #218358;
+  --red-3:    #feebec;
+  --red-6:    #f4a9aa;
+  --red-9:    #e5484d;
+  --red-11:   #ce2c31;
+  --gold-3:   #f2f0e7;
+  --gold-5:   #e1dccf;
+  --gold-8:   #b9a88d;
+  --gold-11:  #71624b;
+
+  --bg-page:    var(--slate-2);
+  --bg-surface: var(--slate-3);
+  --bg-card:    var(--slate-1);
+
+  --text-strong: var(--slate-12);
+  --text-body:   var(--slate-11);
+  --text-muted:  var(--slate-10);
+  --text-faint:  var(--slate-9);
+  --text-accent: var(--blue-11);
+
+  --border-subtle: var(--slate-4);
+  --border-base:   var(--slate-5);
+  --border-strong: var(--slate-6);
+  --border-hover:  var(--slate-7);
+
+  --accent-fill:    var(--blue-9);
+  --accent-fill-hv: var(--blue-10);
+  --accent-subtle:  var(--blue-3);
+
+  --danger-solid: var(--red-9);
+
+  /* ---------- FONT ---------- */
+  --font-sans:    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --font-display: "Schibsted Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --tracking-display: -0.02em;
+  --tracking-label:   0.08em;
+
+  /* ---------- LAYOUT ---------- */
+  --navbar-height: 3.75rem;
+  --container: 1140px;
+
+  /* ---------- RADIUS ---------- */
+  --radius-pill: 999px;
+  --radius-lg:   14px;
+  --radius-md:   12px;
+  --radius-btn:  10px;
+  --radius-icon: 9px;
+  --radius-sm:   8px;
+  --radius-base: 0.4rem;
+
+  /* ---------- SHADOW ---------- */
+  --shadow-lw: 0 1px 2px 0 rgba(0, 0, 0, .1);
+  --shadow-tl: 0 12px 28px 0 rgba(0, 0, 0, .2), 0 2px 4px 0 rgba(0, 0, 0, .1);
+
+  /* ---------- MOTION ---------- */
+  --t-ui: .12s;
+  --ease-brand: cubic-bezier(.08, .52, .52, 1);
+}
+
+:root[data-theme='dark'] {
+  --slate-1:  #111113;
+  --slate-2:  #18191b;
+  --slate-3:  #212225;
+  --slate-4:  #272a2d;
+  --slate-5:  #2e3135;
+  --slate-6:  #363a3f;
+  --slate-7:  #43484e;
+  --slate-8:  #5a6169;
+  --slate-9:  #696e77;
+  --slate-10: #777b84;
+  --slate-11: #afb3ba;
+  --slate-12: #edeef0;
+
+  --blue-3:  #0d2847;
+  --blue-6:  #104d87;
+  --blue-10: #59a9f8;
+  --blue-11: #70b8ff;
+
+  --green-3:  #132d21;
+  --green-6:  #1b543a;
+  --green-11: #3dd68c;
+
+  --red-3:  #3b1219;
+  --red-6:  #72232d;
+  --red-11: #ff9592;
+
+  --gold-3:  #24231f;
+  --gold-5:  #38352e;
+  --gold-11: #cbb99f;
+
+  --text-accent: var(--blue-10);
+}
+
+/* ==========================================================
+   BASE
+   ========================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background-color: var(--bg-page);
+  color: var(--text-body);
+  color-scheme: var(--ifm-color-scheme, light);
+  font: 110%/1.5 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+:root[data-theme='dark'] { color-scheme: dark; }
+
+body { margin: 0; word-wrap: break-word; }
+
+h1, h2, h3, h4 {
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: var(--tracking-display);
+  margin: 0;
+}
+
+p { margin: 0; }
+
+a { color: var(--text-accent); text-decoration: none; }
+
+:focus-visible { outline: 2px solid var(--accent-fill); outline-offset: 2px; }
+
+* { scrollbar-width: thin; scrollbar-color: var(--slate-7) transparent; }
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}

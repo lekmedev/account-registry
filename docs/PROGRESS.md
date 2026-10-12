@@ -13,13 +13,24 @@
 ## Next phase
 - All 7 phases + scheduler wiring done. Remaining optional work: httpx2 TestClient fix, change seed admin password for real deploys.
 
-## File map (scheduler wiring)
-- `backend/app/main.py` — `_build_scheduler()` + lifespan scheduler lifecycle. **Only code file changed.**
-- `AGENTS.md` / `README.md` / `docs/schema.md` — stale "core never passes a scheduler" notes corrected. No behaviour change.
+- [x] Post-phase: Core UI redesign on an autobrr-derived design system. New `frontend/src/styles/tokens.css` (slate/blue ramps + dark ramp inversion) and `app.css`; all core pages moved from inline styles to classNames. Sidebar kept (not a top navbar) on purpose — the plugin count grows over time and a vertical list has room. Dark mode is the product default; `data-theme` is set before first paint in `index.html`. Added a theme toggle, Overview nav item, empty states, status badges and a real `<label>` on every field. Plugin UI untouched — still self-contained react-only. `tsc --noEmit` clean, `vite build` clean, verified live in the browser (login → all 5 core pages → create department round-trips to the DB → theme toggle).
+
+## File map (core UI redesign)
+- `frontend/src/styles/tokens.css` — design tokens + base reset (new).
+- `frontend/src/styles/app.css` — sidebar shell, panel, table, form, badge, login (new).
+- `frontend/index.html` — font links + pre-paint theme script (dark default).
+- `frontend/src/Layout.tsx` — sidebar, theme toggle, shared `PageHead` / `Empty` / `ErrorNote`.
+- `frontend/src/main.tsx`, `pages/*.tsx` — classNames instead of inline styles.
 
 ## Decisions beyond brief
 - (Phases 1–7 unchanged — key: PUT partial-update, JSONB roles/privileges, export col width 20, expiry audit actor None, plugin import fallback names, `_MOUNTED` guard.)
-- No CSS framework — inline styles only, keep bundle/deps minimal.
+- No CSS framework — **overridden for core UI only**: core pages now use two hand-written
+  CSS files driven by design tokens (no Tailwind/unocss/build step added). Plugin UI stays
+  inline-styled and self-contained, per the iron rule.
+- Sidebar layout, not a top navbar: more plugins are expected, and a vertical list has room.
+- Dark mode is the default (`localStorage: ui-theme`; anything other than `light` = dark).
+- App-shell breakpoint is 900px, not the design system's 996px: a fixed 248px sidebar plus
+  wide tables needs to collapse earlier than the landing-page grids do.
 - Tokens in localStorage (simplest per brief §8); refresh rotation handled server-side.
 - Plugin routes render inside Layout (inherit sidebar); each plugin route gets nested `<Route>` for children.
 - `tsconfig` `noUnusedLocals:false` — avoids friction with generated plugin stubs.
