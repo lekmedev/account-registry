@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-registry}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-registry_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-account_registry}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-registry}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-registry}:${POSTGRES_PASSWORD:-registry_dev_only}@db:5432/${POSTGRES_DB:-account_registry}
+    ports:
+      - "${BACKEND_PORT:-8100}:8000"
+    volumes:
+      - ./plugins:/app/plugins:ro
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8101}:5173"
+    volumes:
+      - ./plugins:/plugins:ro
+    environment:
+      VITE_PROXY_TARGET: http://backend:8000
+
+volumes:
+  pgdata:

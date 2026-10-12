@@ -1,0 +1,8 @@
+{
+  "name": "opera_cloud",
+  "version": "1.0.0",
+  "description": "Opera Cloud account registry (local records only)",
+  "min_core_version": "1.0.0",
+  "depends_on": [],
+  "menu": [{"label": "Opera Cloud", "path": "/opera", "permission": "opera.account.view"}]
+}

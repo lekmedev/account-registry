@@ -1,0 +1,8 @@
+{
+  "name": "hello",
+  "version": "1.0.0",
+  "description": "Minimal test plugin proving no core edits are needed",
+  "min_core_version": "1.0.0",
+  "depends_on": [],
+  "menu": [{"label": "Hello", "path": "/hello", "permission": "hello.view"}]
+}
