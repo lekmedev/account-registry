@@ -58,9 +58,29 @@ export async function api<T>(path: string, init: RequestInit = {}, retried = fal
   return body as T
 }
 
-export function errMsg(e: unknown): string {
-  if (e instanceof ApiError) {
-    return typeof e.detail === 'string' ? e.detail : JSON.stringify(e.detail)
+/**
+ * FastAPI sends 422 as a list of {loc, msg}. Render it as a readable form
+ * error ("email: value is not a valid email address") instead of raw JSON.
+ * Plugins carry their own copy of this — they cannot import from here.
+ */
+function fmtDetail(detail: unknown): string {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => {
+        const e = d as { loc?: unknown[]; msg?: string }
+        const field = (e.loc ?? [])
+          .filter((p) => p !== 'body' && p !== 'query' && p !== 'path')
+          .join('.')
+        const m = e.msg ?? 'invalid'
+        return field ? `${field}: ${m}` : m
+      })
+      .join(' · ')
   }
+  return JSON.stringify(detail)
+}
+
+export function errMsg(e: unknown): string {
+  if (e instanceof ApiError) return fmtDetail(e.detail)
   return e instanceof Error ? e.message : 'unknown_error'
 }

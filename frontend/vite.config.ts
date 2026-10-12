@@ -6,7 +6,10 @@ const here = fileURLToPath(new URL('.', import.meta.url))
 // Plugin UI lives outside the frontend root (../plugins/*, /plugins/*),
 // so bare imports in plugin files can't walk up to our node_modules.
 // Alias the shared deps to our copies — generic, no plugin named here.
-const sharedDeps = ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query']
+// `@tanstack/react-query` is deliberately NOT aliased: plugins are
+// react-only (README + AGENTS.md), and leaving it out turns that rule
+// into a build error instead of a comment nobody reads.
+const sharedDeps = ['react', 'react-dom', 'react-router-dom']
 
 export default defineConfig({
   plugins: [react()],

@@ -10,8 +10,9 @@ frontend, plugin architecture. Core knows nothing about account types.
    exact files to read, the token contract, the reusable class names, a template and a
    checklist. Do not read `frontend/src` for that task.
 3. All 7 build phases are DONE. Also DONE: APScheduler wiring, core UI redesign on the
-   design system, mobile drawer. Remaining optional work is in PROGRESS.md "Next phase":
-   plugin UI on the design system, httpx2 TestClient fix, seed password for real deploys.
+   design system, mobile drawer, plugin UI on the design system (`opera_cloud` ships
+   `theme.css` + react-only `useRes`). Remaining optional work is in PROGRESS.md
+   "Next phase": httpx2 TestClient fix, seed password for real deploys, CI wiring.
 4. Never scan the whole codebase — open only what the task needs.
 
 ## Run / test
@@ -21,7 +22,7 @@ cd ~/apps/account-registry && docker compose up -d --build
 curl localhost:8100/health                       # backend
 open localhost:8101/login                        # admin / Admin123! (dev seed)
 docker exec account-registry-backend-1 python -m pytest tests/ -q   # 23 passed
-cd frontend && npx tsc --noEmit && npm run build
+cd frontend && npm run check:plugin-ui && npx tsc --noEmit && npm run build
 ```
 
 ## Repo map
@@ -31,8 +32,11 @@ cd frontend && npx tsc --noEmit && npm run build
 - `backend/app/core/` — auth, users, roles, departments, positions, audit, plugin_loader.
   **No plugin names here. Never add any.**
 - `plugins/<name>/` — `plugin.json`, `models.py`, `routes.py`, `permissions.py`,
-  `services.py`, `tasks.py` (optional), `migrations/`, `frontend/index.tsx`.
+  `services.py`, `tasks.py` (optional), `migrations/`, `frontend/index.tsx`
+  (+ `theme.css` = copy of core tokens/classes when the page uses them).
 - `frontend/src/` — core UI + `plugin_registry.ts` (auto-imports plugin UI, 4 globs).
+- `scripts/check-plugin-ui.mjs` — guard: plugin token copy vs core, no `frontend/src`
+  or `@tanstack` imports in plugins, no hex / inline colours, `routes` exported.
 - `docs/` — `api.md` (endpoint ref), `schema.md` (DB), `BRIEF.md`, `PROGRESS.md`.
 
 ## Iron rules (from BRIEF §8)
@@ -41,7 +45,8 @@ cd frontend && npx tsc --noEmit && npm run build
 - No business logic in routes; use `services.py`. Validate all input with Pydantic.
 - Plugin UI is react-only + self-contained (own fetch + own `can()` via
   `GET /api/v1/core/auth/me`). No imports from `frontend/src`, no `@tanstack`
-  inside plugins — out-of-root files can't resolve them in Docker builds.
+  inside plugins — out-of-root files can't resolve them in Docker builds, and
+  `vite.config.ts` deliberately doesn't alias `@tanstack` so it fails the build.
 - Never log secrets or password hashes.
 
 ## Permissions

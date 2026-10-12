@@ -21,6 +21,7 @@ curl localhost:8100/health
 
 ```bash
 docker exec account-registry-backend-1 python -m pytest tests/ -q   # 23 passed
+cd frontend && npm run check:plugin-ui                             # token copy in sync
 cd frontend && npx tsc --noEmit && npm run build                    # both clean
 ```
 
@@ -28,8 +29,9 @@ cd frontend && npx tsc --noEmit && npm run build                    # both clean
 
 - `backend/app/core/` — auth, users, roles, departments, positions, audit, plugin_loader. No plugin names.
 - `backend/app/main.py` — mounts `/api/v1/core`, calls `load_plugins(app)` at startup.
-- `plugins/<name>/` — `plugin.json`, `models.py`, `routes.py`, `permissions.py`, `services.py`, `tasks.py` (optional), `migrations/`, `frontend/index.tsx`.
+- `plugins/<name>/` — `plugin.json`, `models.py`, `routes.py`, `permissions.py`, `services.py`, `tasks.py` (optional), `migrations/`, `frontend/index.tsx` (+ `theme.css` when it uses the design system).
 - `frontend/src/` — core UI + `plugin_registry.ts` (auto-imports plugin UI via `import.meta.glob`, four globs covering host checkout and Docker `/plugins` mount).
+- `scripts/check-plugin-ui.mjs` — guards plugin UI: token copy vs core, no `frontend/src`/`@tanstack` imports, no hex or inline colours, `routes` exported.
 
 ## How to create a new plugin (using `hello` as the template)
 
@@ -90,12 +92,14 @@ zero edits: adding a folder is enough (frontend needs a rebuild only). Steps:
    APScheduler jobs. Core builds one `BackgroundScheduler` at startup and passes it to
    `load_plugins(app, scheduler=...)`, so your jobs register and run automatically.
    A plugin without `tasks.py` is unaffected.
-9. **`frontend/index.tsx`** — export `routes` (React Router objects); the menu `path`
-   in `plugin.json` must match one of them. Keep it **self-contained**: react-only,
-   own fetch + own `can()` via `GET /api/v1/core/auth/me` (see
-   `plugins/opera_cloud/frontend/index.tsx`). Do NOT import from `frontend/src`
-   or `@tanstack` — out-of-root plugin files can't resolve them in Docker builds.
-   Minimal example (`hello`):
+9. **`frontend/index.tsx` + `frontend/theme.css`** — export `routes` (React Router
+   objects); the menu `path` in `plugin.json` must match one of them. Keep it
+   **self-contained**: react-only, own fetch + own `can()` via
+   `GET /api/v1/core/auth/me`. Do NOT import from `frontend/src` or `@tanstack`
+   — out-of-root plugin files can't resolve them in Docker builds (vite does not
+   alias `@tanstack`, so this is a build error, not a warning). Copy
+   `plugins/opera_cloud/frontend/` as the worked example; `docs/PLUGIN-UI.md` has
+   the token contract. Minimal page, no UI:
    ```tsx
    export const routes = [{ path: '/my-plugin', element: (<div><h2>My plugin</h2></div>) }];
    ```
@@ -103,6 +107,7 @@ zero edits: adding a folder is enough (frontend needs a rebuild only). Steps:
     ```bash
     docker compose up -d --build
     curl localhost:8100/api/v1/core/plugins   # your plugin listed
+    cd frontend && npm run check:plugin-ui    # token copy still in sync
     ```
     Assign the new permission codes to a role (`POST /roles` / `PUT /roles/{id}`
     with `permission_codes`), then the menu item appears in `GET /core/menu` and the sidebar.

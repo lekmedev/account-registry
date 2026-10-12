@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:plugin-ui": "node ../scripts/check-plugin-ui.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.0",

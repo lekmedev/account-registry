@@ -1,0 +1,409 @@
+/* ==========================================================
+   opera_cloud plugin UI — token + class copy.
+
+   BẢN COPY của frontend/src/styles/{tokens,app}.css. Không import được
+   (plugin nằm ngoài root của frontend, Docker build không resolve),
+   nên phải mang theo. scripts/check-plugin-ui.mjs diff token block
+   này với core và fail build khi lệch.
+
+   Chỉ copy phần plugin dùng: panel / table / form / btn / badge /
+   alert / empty / pager / chips / pagehead. Không copy shell
+   (sidebar, topbar, login) — core đã render.
+
+   Sửa token ở core thì sửa lại file này, không ngược lại.
+   ========================================================== */
+
+:root {
+  /* ---------- SLATE ---------- */
+  --slate-1:  #fcfcfd;
+  --slate-2:  #f9f9fb;
+  --slate-3:  #f0f0f3;
+  --slate-4:  #e8e8ec;
+  --slate-5:  #e0e1e6;
+  --slate-6:  #d9d9e0;
+  --slate-7:  #cdced6;
+  --slate-8:  #b9bbc6;
+  --slate-9:  #8b8d98;
+  --slate-10: #80838d;
+  --slate-11: #60646c;
+  --slate-12: #1c2024;
+
+  /* ---------- BLUE ---------- */
+  --blue-3:   #e6f4fe;
+  --blue-6:   #acd8fc;
+  --blue-9:   #0090ff;
+  --blue-10:  #0588f0;
+  --blue-11:  #0569c0;
+
+  /* ---------- SEMANTIC ---------- */
+  --green-3:  #e6f6eb;
+  --green-6:  #adddc0;
+  --green-9:  #30a46c;
+  --green-11: #218358;
+  --red-3:    #feebec;
+  --red-6:    #f4a9aa;
+  --red-9:    #e5484d;
+  --red-11:   #ce2c31;
+  --gold-3:   #f2f0e7;
+  --gold-5:   #e1dccf;
+  --gold-8:   #b9a88d;
+  --gold-11:  #71624b;
+
+  --bg-page:    var(--slate-2);
+  --bg-surface: var(--slate-3);
+  --bg-card:    var(--slate-1);
+
+  --text-strong: var(--slate-12);
+  --text-body:   var(--slate-11);
+  --text-muted:  var(--slate-10);
+  --text-faint:  var(--slate-9);
+  --text-accent: var(--blue-11);
+
+  --border-subtle: var(--slate-4);
+  --border-base:   var(--slate-5);
+  --border-strong: var(--slate-6);
+  --border-hover:  var(--slate-7);
+
+  --accent-fill:    var(--blue-9);
+  --accent-fill-hv: var(--blue-10);
+  --accent-subtle:  var(--blue-3);
+
+  --danger-solid: var(--red-9);
+
+  /* ---------- FONT ---------- */
+  --font-sans:    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --font-display: "Schibsted Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --tracking-display: -0.02em;
+  --tracking-label:   0.08em;
+
+  /* ---------- LAYOUT ---------- */
+  --navbar-height: 3.75rem;
+  --container: 1140px;
+
+  /* ---------- RADIUS ---------- */
+  --radius-pill: 999px;
+  --radius-lg:   14px;
+  --radius-md:   12px;
+  --radius-btn:  10px;
+  --radius-icon: 9px;
+  --radius-sm:   8px;
+  --radius-base: 0.4rem;
+
+  /* ---------- SHADOW ---------- */
+  --shadow-lw: 0 1px 2px 0 rgba(0, 0, 0, .1);
+  --shadow-tl: 0 12px 28px 0 rgba(0, 0, 0, .2), 0 2px 4px 0 rgba(0, 0, 0, .1);
+
+  /* ---------- MOTION ---------- */
+  --t-ui: .12s;
+  --ease-brand: cubic-bezier(.08, .52, .52, 1);
+}
+
+/*
+ * Dark mode là MẶC ĐỊNH. Nó là ĐẢO RAMP chứ không phải đảo class:
+ * tên biến không đổi, `--slate-1` đổi giá trị. Nên không cần `dark:`
+ * variant và không cần JS trong plugin.
+ */
+:root[data-theme='dark'] {
+  --slate-1:  #111113;
+  --slate-2:  #18191b;
+  --slate-3:  #212225;
+  --slate-4:  #272a2d;
+  --slate-5:  #2e3135;
+  --slate-6:  #363a3f;
+  --slate-7:  #43484e;
+  --slate-8:  #5a6169;
+  --slate-9:  #696e77;
+  --slate-10: #777b84;
+  --slate-11: #afb3ba;
+  --slate-12: #edeef0;
+
+  --blue-3:  #0d2847;
+  --blue-6:  #104d87;
+  --blue-10: #59a9f8;
+  --blue-11: #70b8ff;
+
+  --green-3:  #132d21;
+  --green-6:  #1b543a;
+  --green-11: #3dd68c;
+
+  --red-3:  #3b1219;
+  --red-6:  #72232d;
+  --red-11: #ff9592;
+
+  --gold-3:  #24231f;
+  --gold-5:  #38352e;
+  --gold-11: #cbb99f;
+
+  --text-accent: var(--blue-10);
+}
+
+/* ==========================================================
+   CLASSES — copy từ app.css, bỏ shell (side / topbar / login).
+   Tên giữ nguyên: cùng tên với core nên nhìn là một hệ thống.
+   ========================================================== */
+
+/* ---------- PAGE HEAD ---------- */
+.pagehead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.pagehead h1 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: .3rem;
+}
+.pagehead p { color: var(--text-body); font-size: .92rem; line-height: 1.6; max-width: 46rem; }
+
+/* ---------- PANEL ---------- */
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.panel + .panel { margin-top: 1.25rem; }
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+  padding: .85rem 1.15rem;
+  border-bottom: 1px solid var(--border-base);
+}
+.panel__title {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.panel__meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  color: var(--text-faint);
+}
+.panel__body { padding: 1.15rem; }
+
+/* ---------- TOOLBAR ---------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+}
+.search { position: relative; flex: 1 1 240px; min-width: 0; }
+.search__icon {
+  position: absolute;
+  top: 50%;
+  left: .7rem;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search input { padding-left: 2.1rem; }
+
+/* ---------- INPUT ---------- */
+.input, .select {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: .92rem;
+  color: var(--text-strong);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-base);
+  padding: .5rem .7rem;
+  transition: border-color var(--t-ui), box-shadow var(--t-ui);
+}
+.input::placeholder { color: var(--slate-8); }
+.input:hover, .select:hover { border-color: var(--border-hover); }
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent-fill);
+  box-shadow: 0 0 0 3px rgba(0, 144, 255, .16);
+}
+.input:disabled { background: var(--bg-page); color: var(--text-muted); cursor: not-allowed; }
+.select {
+  width: auto;
+  min-width: 180px;
+  appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2380838d' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .6rem center;
+  background-size: 15px;
+}
+
+/* ---------- FIELD ---------- */
+.field > .label {
+  display: block;
+  margin-bottom: .32rem;
+  font-family: var(--font-mono);
+  font-size: .66rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.fieldgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: .75rem;
+  align-items: end;
+}
+
+/* ---------- BUTTON ---------- */
+.btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem 1rem;
+  font-family: var(--font-sans);
+  font-size: .9rem;
+  font-weight: 600;
+  line-height: 1.35;
+  border: 1px solid transparent;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--t-ui), border-color var(--t-ui), color var(--t-ui);
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn svg { width: 15px; height: 15px; }
+.btn--sm { padding: .28rem .6rem; font-size: .8rem; border-radius: var(--radius-sm); }
+
+.btn--primary { background: var(--accent-fill); border-color: var(--accent-fill); color: #fff; }
+.btn--primary:hover:not(:disabled) { background: var(--accent-fill-hv); border-color: var(--accent-fill-hv); }
+
+.btn--ghost { background: var(--bg-card); border-color: var(--border-hover); color: var(--text-strong); }
+.btn--ghost:hover:not(:disabled) { background: var(--bg-surface); border-color: var(--slate-8); }
+
+.btn--danger { background: var(--danger-solid); border-color: var(--danger-solid); color: #fff; }
+.btn--danger:hover:not(:disabled) { background: var(--red-11); border-color: var(--red-11); }
+
+/* ---------- TABLE ---------- */
+.tablewrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.table thead th {
+  text-align: left;
+  padding: .65rem 1.15rem;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-base);
+  font-family: var(--font-mono);
+  font-size: .66rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.table tbody td {
+  padding: .65rem 1.15rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-body);
+  vertical-align: middle;
+}
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover { background: var(--bg-page); }
+.table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table .strong { font-weight: 500; color: var(--text-strong); }
+.table .sub {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--text-faint);
+}
+.table .trunc { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table .actions { text-align: right; white-space: nowrap; }
+
+/* ---------- BADGE ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  padding: .08rem .55rem;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--text-body);
+  white-space: nowrap;
+}
+.badge::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.badge--ok     { border-color: var(--green-6); background: var(--green-3); color: var(--green-11); }
+.badge--off    { border-color: var(--slate-6);  background: var(--slate-3); color: var(--text-muted); }
+.badge--info   { border-color: var(--blue-6);   background: var(--blue-3);   color: var(--text-accent); }
+.badge--warn   { border-color: var(--gold-5);   background: var(--gold-3);   color: var(--gold-11); }
+.badge--danger { border-color: var(--red-6);    background: var(--red-3);    color: var(--red-11); }
+
+/* ---------- ALERT ---------- */
+.alert {
+  display: flex;
+  gap: .6rem;
+  padding: .65rem .9rem;
+  border: 1px solid var(--border-base);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  font-size: .88rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+.alert--err { border-left-color: var(--red-9); background: var(--red-3); color: var(--red-11); }
+.alert--ok  { border-left-color: var(--green-9); background: var(--green-3); color: var(--green-11); }
+.alert code { font-family: var(--font-mono); font-size: .85em; }
+
+/* ---------- EMPTY ---------- */
+.empty { padding: 2.5rem 1rem; text-align: center; }
+.empty__title { font-size: .98rem; font-weight: 700; color: var(--text-strong); margin-bottom: .2rem; }
+.empty__text { font-size: .88rem; color: var(--text-body); }
+
+/* ---------- PAGINATION ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  color: var(--text-faint);
+}
+
+/* ---------- CHIPS ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+.chip {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--text-body);
+  background: var(--bg-page);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: .1rem .45rem;
+}
+
+/* ---------- MISC ---------- */
+.hint { font-family: var(--font-mono); font-size: .72rem; color: var(--text-faint); line-height: 1.7; word-break: break-word; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.spacer { flex: 1 1 auto; }
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
