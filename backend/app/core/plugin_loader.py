@@ -153,13 +153,58 @@ def resolve_order(manifests: dict[str, dict]) -> tuple[list[dict], dict[str, str
     return ordered, skipped
 
 
+def _canonical_name(plugin_name: str, mod: str) -> str:
+    """The dotted name a plugin module would have if the repo were a package."""
+    return f"plugins.{plugin_name}.{mod}"
+
+
+def _importable(dotted: str) -> bool:
+    """True when `dotted` names an importable package.
+
+    importlib.util.find_spec raises ModuleNotFoundError for a missing parent
+    package instead of returning None, so a bare call would turn "repo root
+    is not on sys.path" (normal in Docker) into a plugin load failure.
+    """
+    try:
+        return importlib.util.find_spec(dotted) is not None
+    except (ImportError, ValueError, AttributeError):
+        return False
+
+
 def _load_module(plugin_name: str, mod: str, path: Path):
-    spec = importlib.util.spec_from_file_location(
-        f"account_registry_plugin_{plugin_name}_{mod}", path
-    )
+    """Exec one plugin module and register it under BOTH names.
+
+    Plugin files import their siblings by package name
+    (`from plugins.<name>.services import ...`) with a fallback to the
+    generated name used here. When both spellings resolve to the SAME module
+    object, a declarative model is defined exactly once — no duplicate class,
+    no SAWarning, and no "the class the test imported isn't the one the
+    route uses" trap. Tests import the package name first, so prefer the
+    already-imported module when there is one.
+    """
+    canonical = _canonical_name(plugin_name, mod)
+    generated = f"account_registry_plugin_{plugin_name}_{mod}"
+
+    existing = sys.modules.get(canonical)
+    if existing is not None:
+        # Same file? Trust it; a stale entry from another plugin is impossible
+        # because the name embeds the plugin name.
+        sys.modules.setdefault(generated, existing)
+        return existing
+
+    spec = importlib.util.spec_from_file_location(generated, path)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
+
+    # Alias the package spelling so a later `import plugins.<name>.<mod>`
+    # finds this module instead of re-executing the file. Only when the
+    # plugins package is actually importable (repo root on sys.path, i.e.
+    # tests); in Docker the repo root is not on sys.path and the generated
+    # name is the only spelling in play. find_spec raises ModuleNotFoundError
+    # for a missing package rather than returning None, so guard it.
+    if _importable(canonical.rpartition(".")[0]):
+        sys.modules.setdefault(canonical, module)
     return module
 
 
@@ -256,28 +301,29 @@ def run_plugin_migrations(db_engine, plugin_dir: Path, name: str) -> bool:
     return bool(pending)
 
 
+# Modules are imported in dependency order, never alphabetically. routes.py
+# and tasks.py import services.py by its generated module name, so services
+# must already be in sys.modules by then — otherwise the plugin is skipped
+# with a confusing "No module named ..." error. Generic: no plugin named here.
+_MODULE_ORDER = ("models", "services", "permissions", "routes")
+
+
 def _init_one(app, manifest: dict, session_factory, db_engine, scheduler) -> bool:
     name = manifest["name"]
     pdir = manifest["_dir"]
+    mods: dict[str, object] = {}
     try:
-        models_path = pdir / "models.py"
-        if models_path.is_file():
-            _load_module(name, "models", models_path)
-        routes_mod = None
-        routes_path = pdir / "routes.py"
-        if routes_path.is_file():
-            routes_mod = _load_module(name, "routes", routes_path)
-        perms_mod = None
-        perms_path = pdir / "permissions.py"
-        if perms_path.is_file():
-            perms_mod = _load_module(name, "permissions", perms_path)
-        services_path = pdir / "services.py"
-        if services_path.is_file():
-            _load_module(name, "services", services_path)  # import for side effects only
+        for mod in _MODULE_ORDER:
+            path = pdir / f"{mod}.py"
+            if path.is_file():
+                mods[mod] = _load_module(name, mod, path)
     except Exception as e:
         logger.error("plugin %s: import failed: %s — skipped", name, e)
         SKIPPED[name] = f"import: {e}"
         return False
+
+    routes_mod = mods.get("routes")
+    perms_mod = mods.get("permissions")
 
     if routes_mod is not None:
         router = getattr(routes_mod, "router", None)

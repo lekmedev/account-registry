@@ -66,9 +66,14 @@
 ## How to run and test
 - Docker: `docker compose up -d --build` → backend :8100, frontend :8101.
 - **Không Docker**: Postgres 16 native ở `localhost:5433` (xem `.env`), rồi `cd backend && alembic
-  upgrade head && uvicorn app.main:app --port 8100`. `alembic` chạy bằng console script từ `backend/`
-  (`python -m alembic` fail vì folder `backend/alembic/` che package); uvicorn chạy từ repo root, nếu
-  không loader không import được `plugins.*` và sẽ bỏ qua plugin.
+  upgrade head && python -m uvicorn app.main:app --port 8100`. `alembic` chạy bằng console script từ
+  `backend/` (`python -m alembic` fail vì folder `backend/alembic/` che package).
+  **uvicorn chạy từ `backend/`, KHÔNG phải repo root** — từ repo root sẽ
+  `ModuleNotFoundError: No module named 'app'` vì `app/` nằm trong `backend/`.
+  Loader không cần `plugins.*` importable: nó load plugin bằng **file path** và đặt module vào
+  `sys.modules` dưới tên sinh ra (`account_registry_plugin_<name>_<mod>`), nên plugin vẫn mount
+  đúng. Nhánh `try: from plugins.<name> import ...` trong plugin chỉ dùng được khi test (repo root
+  trong `sys.path` qua conftest).
 - Frontend dev: `cd frontend && VITE_PROXY_TARGET=http://localhost:8100 npm run dev` (:5173).
 - Test: `cd backend && python -m pytest -q` (export `DATABASE_URL` trước) — gom test core **và** test
   của mọi plugin. `cd frontend && npm run check:plugin-ui && npx tsc --noEmit && npm run build`.

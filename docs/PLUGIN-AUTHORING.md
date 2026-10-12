@@ -112,8 +112,9 @@ Bỏ `try/except` thì plugin sẽ chạy được ở Docker nhưng fail khi te
    liệu của bạn là dữ liệu kinh doanh.
 7. **Mọi lần ghi đều `audit.log(...)`** với `actor_id` lấy từ dependency. Job nền thì
    để `actor_id=None` và `action` riêng (`"expire"`).
-8. **`__table_args__ = {"extend_existing": True}`** trên model: loader và test có thể
-   import module hai lần.
+8. **Đừng thêm `extend_existing`.** Loader đăng ký module plugin dưới **cả hai** tên
+   (`plugins.<tên>.<mod>` và tên sinh ra) nhưng chỉ thực thi file **một lần**, nên model
+   được định nghĩa đúng một lần — `extend_existing` chỉ giấu lỗi double-import thật.
 9. **Trả Pydantic model, không trả object SQLAlchemy.** Enrich tên bảng lõi trong
    `services`, đừng để route tự `.name` của FK.
 10. **Đừng sửa `backend/app/core/` hay `frontend/src/`.** Cần thêm gì đó? Ghi vào

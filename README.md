@@ -73,7 +73,7 @@ the loader's regression fixture, not the template; `templates/plugin/` is.
    Codes are upserted into the core table (never deleted). Prefix codes with your
    plugin name. Use them in routes via `Depends(auth.require_permission("myplugin.view"))`.
 4. **`models.py`** — SQLAlchemy models on the core `Base` (`from app.core.db import Base`).
-   Add `__table_args__ = {"extend_existing": True}` (loader may import the module twice).
+   No `extend_existing` needed: the loader executes each plugin file once.
 5. **`services.py`** — all business logic here (routes stay thin). Raise
    `ConflictError`/`NotFoundError` (import from `app.core.services`) for 409/404.
    Validate input with Pydantic schemas; write audit entries via `app.core.audit.log(...)`.

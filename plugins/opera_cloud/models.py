@@ -14,9 +14,6 @@ def _utcnow() -> datetime:
 
 class OperaAccount(Base):
     __tablename__ = "opera_accounts"
-    # extend_existing: the loader and tests may import this module twice
-    # (loader spec name + `plugins.*` package name); last definition wins.
-    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)

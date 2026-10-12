@@ -18,15 +18,17 @@ import './styles/app.css'
 
 const qc = new QueryClient()
 
+function Loading() {
+  return (
+    <div className="empty">
+      <p className="hint">loading…</p>
+    </div>
+  )
+}
+
 function RequireAuth({ children, perm }: { children: JSX.Element; perm?: string }) {
   const { me, loading, can } = useAuth()
-  if (loading) {
-    return (
-      <div className="empty">
-        <p className="hint">loading…</p>
-      </div>
-    )
-  }
+  if (loading) return <Loading />
   if (!me) return <Navigate to="/login" replace />
   if (perm && !can(perm)) {
     return (
@@ -119,29 +121,44 @@ function NotFound() {
 
 function App() {
   const [pluginRoutes, setPluginRoutes] = useState<RouteObject[]>([])
-  useEffect(() => { loadPluginRoutes().then(setPluginRoutes).catch(() => {}) }, [])
+  // Plugin UI arrives as a dynamic import, so on a cold load of /opera the
+  // route table is still empty and the splat route would render 404 for one
+  // frame. Hold the whole table back until discovery settles.
+  const [routesReady, setRoutesReady] = useState(false)
+  useEffect(() => {
+    let alive = true
+    loadPluginRoutes()
+      .then((r) => { if (alive) setPluginRoutes(r) })
+      .catch(() => { if (alive) setPluginRoutes([]) })
+      .finally(() => { if (alive) setRoutesReady(true) })
+    return () => { alive = false }
+  }, [])
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<RequireAuth><Layout /></RequireAuth>}>
-            <Route path="/" element={<Home />} />
-            <Route path="/users" element={<RequireAuth perm="core.user.view"><Users /></RequireAuth>} />
-            <Route path="/roles" element={<RequireAuth perm="core.role.view"><Roles /></RequireAuth>} />
-            <Route path="/departments" element={<RequireAuth perm="core.department.view"><Departments /></RequireAuth>} />
-            <Route path="/positions" element={<RequireAuth perm="core.position.view"><Positions /></RequireAuth>} />
-            <Route path="/audit" element={<RequireAuth perm="core.audit.view"><Audit /></RequireAuth>} />
-            {pluginRoutes.map((r, i) => (
-              <Route key={`plugin-${i}`} path={r.path} element={r.element}>
-                {(r.children ?? []).map((c, j) => (
-                  <Route key={`plugin-${i}-${j}`} path={c.path} element={c.element} />
-                ))}
-              </Route>
-            ))}
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        {routesReady ? (
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<RequireAuth><Layout /></RequireAuth>}>
+              <Route path="/" element={<Home />} />
+              <Route path="/users" element={<RequireAuth perm="core.user.view"><Users /></RequireAuth>} />
+              <Route path="/roles" element={<RequireAuth perm="core.role.view"><Roles /></RequireAuth>} />
+              <Route path="/departments" element={<RequireAuth perm="core.department.view"><Departments /></RequireAuth>} />
+              <Route path="/positions" element={<RequireAuth perm="core.position.view"><Positions /></RequireAuth>} />
+              <Route path="/audit" element={<RequireAuth perm="core.audit.view"><Audit /></RequireAuth>} />
+              {pluginRoutes.map((r, i) => (
+                <Route key={`plugin-${i}`} path={r.path} element={r.element}>
+                  {(r.children ?? []).map((c, j) => (
+                    <Route key={`plugin-${i}-${j}`} path={c.path} element={c.element} />
+                  ))}
+                </Route>
+              ))}
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        ) : (
+          <Loading />
+        )}
       </AuthProvider>
     </BrowserRouter>
   )
