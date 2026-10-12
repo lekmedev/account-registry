@@ -3,6 +3,9 @@
 Mục đích: khi viết `plugins/<tên>/frontend/index.tsx`, giao diện phải **trông như
 được viết cùng lúc với core UI**, mà không cần đọc toàn bộ `frontend/src`.
 
+Phần **hợp đồng chung** (sinh code, backend, test, definition of done) nằm ở
+`docs/PLUGIN-AUTHORING.md`. File này chỉ nói về UI.
+
 Áp dụng design system của autobrr (xem `design.md` ở repo cha nếu cần nguồn gốc token).
 
 ---
@@ -37,9 +40,10 @@ không alias `@tanstack` để rule này thành build error chứ không phải 
 **Không cần đọc**: `Layout.tsx`, `main.tsx`, `api.ts`, `auth.tsx`, hay các page khác.
 `api.ts` và `auth.tsx` là của core — plugin tự có bản riêng.
 
-Mẫu thật hoàn chỉnh: `plugins/opera_cloud/frontend/` — `index.tsx` + `theme.css`,
-react-only, có empty state / alert / phân trang / gate theo permission. Copy cặp file
-này thay vì viết lại từ template bên dưới.
+Mẫu thật hoàn chỉnh: `templates/plugin/frontend/` — `index.tsx` + `theme.css`,
+react-only, có empty state / alert / phân trang / gate theo permission. Sinh ra bằng
+`node scripts/new-plugin.mjs <tên> "<Label>"`, nên luôn khớp template. Bản giàu hơn
+(ví dụ thật, có export + cron): `plugins/opera_cloud/frontend/`.
 
 ---
 

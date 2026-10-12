@@ -1,0 +1,1 @@
+"""{{LABEL}} migration revisions. First revision: down_revision = None."""

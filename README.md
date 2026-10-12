@@ -31,18 +31,28 @@ cd frontend && npx tsc --noEmit && npm run build                    # both clean
 - `backend/app/main.py` — mounts `/api/v1/core`, calls `load_plugins(app)` at startup.
 - `plugins/<name>/` — `plugin.json`, `models.py`, `routes.py`, `permissions.py`, `services.py`, `tasks.py` (optional), `migrations/`, `frontend/index.tsx` (+ `theme.css` when it uses the design system).
 - `frontend/src/` — core UI + `plugin_registry.ts` (auto-imports plugin UI via `import.meta.glob`, four globs covering host checkout and Docker `/plugins` mount).
-- `scripts/check-plugin-ui.mjs` — guards plugin UI: token copy vs core, no `frontend/src`/`@tanstack` imports, no hex or inline colours, `routes` exported.
+- `scripts/check-plugin-ui.mjs` — guards plugin UI: token copy vs core (including the template's), no `frontend/src`/`@tanstack` imports, no hex or inline colours, `routes` exported.
+- `templates/plugin/` + `scripts/new-plugin.mjs` — scaffold source for new plugins and the one command that copies it into `plugins/`.
+- `docs/PLUGIN-AUTHORING.md` — the plugin contract: what core provides, the file contract, backend/UI rules, tests, definition of done, anti-patterns.
 
-## How to create a new plugin (using `hello` as the template)
+## How to create a new plugin
 
-`plugins/hello/` is the minimal working plugin — copy it and rename. Core needs
-zero edits: adding a folder is enough (frontend needs a rebuild only). Steps:
+**Start here: `docs/PLUGIN-AUTHORING.md`** — the contract, the ten rules and the
+definition of done. One command produces a working plugin:
 
-1. **Copy the template.**
-   ```bash
-   cp -r plugins/hello plugins/my_plugin
-   ```
-2. **Write `plugin.json`** (name must match the folder):
+```bash
+node scripts/new-plugin.mjs my_plugin "My Plugin"
+```
+
+The rest of this section is a condensed reference of the same contract. `hello` is
+the loader's regression fixture, not the template; `templates/plugin/` is.
+
+1. **Scaffold** — `node scripts/new-plugin.mjs <name> "Label"` copies
+   `templates/plugin/` (manifest, permissions, model, services, routes, migration,
+   cron, UI + `theme.css`, tests) and substitutes `{{name}}`, `{{Label}}`, `{{LABEL}}`,
+   `{{PERM_PREFIX}}`, `{{ROUTE_PATH}}`, `{{TABLE}}`. Core needs zero edits: adding a
+   folder under `plugins/` is enough (frontend needs a rebuild only).
+2. **`plugin.json`** (name must match the folder):
    ```json
    {
      "name": "my_plugin",
@@ -111,6 +121,18 @@ zero edits: adding a folder is enough (frontend needs a rebuild only). Steps:
     ```
     Assign the new permission codes to a role (`POST /roles` / `PUT /roles/{id}`
     with `permission_codes`), then the menu item appears in `GET /core/menu` and the sidebar.
+
+## Tests
+
+Plugin tests live in `plugins/<name>/tests/`, next to the code they cover — writing a
+plugin never means editing `backend/tests/`. Everything runs together:
+
+```bash
+cd backend && python -m pytest -q     # DATABASE_URL exported first
+```
+
+They share core's `app_factory` / `login` helpers from `backend/tests/conftest.py`;
+see `docs/PLUGIN-AUTHORING.md` §5.
 
 ## Known issues
 

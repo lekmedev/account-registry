@@ -1,0 +1,14 @@
+{
+  "name": "{{name}}",
+  "version": "1.0.0",
+  "description": "{{LABEL}} — one sentence on what this plugin stores",
+  "min_core_version": "1.0.0",
+  "depends_on": [],
+  "menu": [
+    {
+      "label": "{{LABEL}}",
+      "path": "{{ROUTE_PATH}}",
+      "permission": "{{PERM_PREFIX}}.record.view"
+    }
+  ]
+}

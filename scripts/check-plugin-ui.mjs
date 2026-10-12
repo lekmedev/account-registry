@@ -118,9 +118,19 @@ function checkFile(file, code) {
   }
 }
 
+// Every folder that ships plugin UI and therefore owns a token copy. The
+// generator's template counts too: it is copied verbatim into new plugins,
+// so if it drifts, every plugin made from it ships a wrong theme.
+const SCAN_DIRS = [
+  ...(existsSync(PLUGINS)
+    ? readdirSync(PLUGINS)
+        .map((name) => join(PLUGINS, name, 'frontend'))
+    : []),
+  join(ROOT, 'templates', 'plugin', 'frontend'),
+]
+
 let scanned = 0
-for (const plugin of existsSync(PLUGINS) ? readdirSync(PLUGINS) : []) {
-  const dir = join(PLUGINS, plugin, 'frontend')
+for (const dir of SCAN_DIRS) {
   if (!existsSync(dir) || !statSync(dir).isDirectory()) continue
   for (const entry of readdirSync(dir)) {
     const file = join(dir, entry)
