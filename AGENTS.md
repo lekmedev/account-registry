@@ -6,10 +6,13 @@ frontend, plugin architecture. Core knows nothing about account types.
 ## Start here (new session)
 
 1. Read `docs/BRIEF.md` (frozen spec, never edit) + `docs/PROGRESS.md` (handoff).
-2. All 7 build phases are DONE. APScheduler wiring is DONE too (core builds a
-   `BackgroundScheduler` and passes it to `load_plugins`). Remaining optional work is in
-   PROGRESS.md "Next phase": httpx2 TestClient fix, seed password for real deploys.
-3. Never scan the whole codebase — open only what the task needs.
+2. Writing a **plugin UI**? Read `docs/PLUGIN-UI.md` BEFORE touching code — it lists the
+   exact files to read, the token contract, the reusable class names, a template and a
+   checklist. Do not read `frontend/src` for that task.
+3. All 7 build phases are DONE. Also DONE: APScheduler wiring, core UI redesign on the
+   design system, mobile drawer. Remaining optional work is in PROGRESS.md "Next phase":
+   plugin UI on the design system, httpx2 TestClient fix, seed password for real deploys.
+4. Never scan the whole codebase — open only what the task needs.
 
 ## Run / test
 

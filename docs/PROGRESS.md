@@ -1,58 +1,80 @@
 # PROGRESS — Account Registry (max 80 lines)
 
+## Session start (đọc theo thứ tự, KHÔNG quét cả repo)
+1. `docs/BRIEF.md` — spec đóng băng, không sửa.   2. `docs/PROGRESS.md` — file này.
+3. Viết **UI plugin**? → đọc `docs/PLUGIN-UI.md` **trước khi động vào code**: nó chỉ rõ đọc
+   file nào, token lấy ở đâu, class nào dùng được, template + checklist.
+
 ## Completed phases
-- [x] Phase 1: Compose, FastAPI skeleton, Postgres 16, Alembic baseline, health, frontend stub, pytest (3 passed), live e2e verified.
-- [x] Phase 2: Core auth (login/refresh/me, JWT 30m/7d, bcrypt), users, roles/permissions (admin role = `["*"]`), departments, positions, audit log + filters, migrations 0002 (tables) + 0003 (admin seed), pytest 9 passed, live e2e verified.
-- [x] Phase 3: Plugin loader + hello test plugin. Loader scans `plugins/*/plugin.json` at startup (no hard-coded names), validates manifest + min_core_version, topo-sorts depends_on, skips failures with log, imports models/routes/permissions/services, mounts router at `/api/v1/plugins/<name>`, upserts perms (never deletes), runs per-plugin migrations with own version table `alembic_version_<name>`, optional tasks.py register_tasks. `GET /core/plugins` + `GET /core/menu` (perm-filtered). hello plugin proves zero core edits for new plugins. pytest 16 passed (9 old + 7 new), live e2e verified.
-- [x] Phase 4: opera_cloud plugin backend. `opera_accounts` table (unique username + operator_code, FK dept/position SET NULL, JSONB roles/privileges, status enum active/disabled/expired), 5 permissions (`opera.account.view/create/edit/delete/export`), full CRUD + list (q search over 5 fields, dept/position/status filters, Page shape) + `.xlsx` export (openpyxl, current-filter, header+filter-respect tested) + audit on create/update/delete/expire + daily expiry job (`tasks.py` register_tasks, 02:05 cron). Migration `opera_0001` runs via loader's own version table. Zero core files touched. pytest 23 passed (16 old + 7 new), live e2e verified (create→list→export→delete).
-- [x] Phase 5: Frontend core. React+TS+React Router+TanStack Query: login (token pair in localStorage, 401→refresh→retry, else /login), Layout (core nav perm-gated + plugin menu from `GET /core/menu`), pages users (search/page, create, enable/disable), roles (list+create, all-perms hint), departments, positions (dept filter), audit (action/resource filters+page), home, 404. `plugin_registry.ts` auto-imports `*/frontend/index.tsx` via 4 globs (host + `/plugins` Docker mount) — core names no plugin. `tsc` clean, `vite build` clean, live verified (frontend :8101 = 200, menu shows Hello+Opera Cloud). Backend pytest still 23 passed.
-- [x] Phase 6: opera_cloud frontend. Self-contained `plugins/opera_cloud/frontend/index.tsx` (own api + `can()` via /core/auth/me, no core-src imports): /opera list (q search, dept/position/status filters, pagination), create/edit form (all fields, csv roles/privileges, date), delete confirm, Export .xlsx (current filter, blob download), buttons perm-gated (view/create/edit/delete/export). Core names no plugin (generic Vite alias + tsconfig paths). tsc clean, vite build clean, live e2e create→filter→export→delete verified, backend pytest still 23 passed.
-- [x] Phase 7: Docs. `docs/api.md` (all 30 routes from live OpenAPI: health/auth/users/roles/depts/positions/audit/plugins+menu/hello/opera + curl examples), `docs/schema.md` (8 core tables + opera_accounts, rels, migration/version-table notes), README rewritten (run/test/layout + 10-step new-plugin guide via `hello`). Docs-only, zero code touched. Backend pytest still 23 passed.
-- [x] Post-phase: APScheduler wiring. Core builds one `BackgroundScheduler` (`app/main.py::_build_scheduler`), passes it to `load_plugins(app, scheduler=...)`, and starts it *after* plugins registered their jobs (`shutdown(wait=False)` on lifespan exit). The opera_cloud daily 02:05 expiry cron now actually fires. Loader signature and architecture unchanged; no plugin names in core. Verified live: app startup logs `scheduler started with 1 job(s)`; pytest 23 passed; `GET /core/plugins` lists hello + opera_cloud.
+- [x] P1 Compose + FastAPI + Postgres 16 + Alembic + health + pytest.
+- [x] P2 Core auth (JWT 30m/7d, bcrypt), users, roles/permissions (admin = `["*"]`), departments,
+      positions, audit + filters. pytest 9.
+- [x] P3 Plugin loader: scan `plugins/*/plugin.json` (không hard-code tên), validate manifest +
+      min_core_version, topo-sort `depends_on`, skip lỗi nhưng app vẫn start, mount router
+      `/api/v1/plugins/<name>`, upsert perms, per-plugin migrations + version table riêng,
+      `/core/plugins` + `/core/menu`. pytest 16.
+- [x] P4 opera_cloud backend: CRUD + q/filter/page + `.xlsx` export + audit + daily expiry. pytest 23.
+- [x] P5 Frontend core: login, Layout, 5 page CRUD, `plugin_registry.ts` (4 globs). tsc + build sạch.
+- [x] P6 opera_cloud frontend (self-contained react-only). P7 Docs: `api.md`, `schema.md`,
+      README (hướng dẫn tạo plugin qua `hello`).
+
+## Post-phase work
+- **APScheduler wiring.** Core tạo 1 `BackgroundScheduler` (`main.py::_build_scheduler`), truyền
+  vào `load_plugins(app, scheduler=...)`, start **sau** khi plugin đăng ký job, shutdown trong
+  lifespan. Cron 02:05 của opera chạy thật. Loader signature không đổi, core không biết tên plugin.
+  Thêm handler cho logger `app` (uvicorn chỉ config logger riêng nên `INFO` bị nuốt).
+  Verify: `app: scheduler started with 1 job(s)`, 23 passed.
+- **Core UI redesign** theo design system lấy từ autobrr. Thêm `tokens.css` + `app.css`, core pages
+  chuyển từ inline style sang className. Sidebar (không phải navbar trên) vì số plugin sẽ tăng. Dark
+  mode mặc định, set trước lúc paint. Verify: login → 5 page → tạo Department round-trip DB →
+  toggle theme; tsc + build sạch.
+- **Mobile drawer.** <900px sidebar thành off-canvas, mở bằng burger ở topbar sticky; đóng khi bấm
+  link / scrim / Escape (focus về burger). Dùng `visibility` (không chỉ `transform`) để link ẩn
+  không tab tới được. `grid-template-rows: auto 1fr` để topbar không bị giãn.
 
 ## Next phase
-- All 7 phases + scheduler wiring done. Remaining optional work: httpx2 TestClient fix, change seed admin password for real deploys.
-
-- [x] Post-phase: Core UI redesign on an autobrr-derived design system. New `frontend/src/styles/tokens.css` (slate/blue ramps + dark ramp inversion) and `app.css`; all core pages moved from inline styles to classNames. Sidebar kept (not a top navbar) on purpose — the plugin count grows over time and a vertical list has room. Dark mode is the product default; `data-theme` is set before first paint in `index.html`. Added a theme toggle, Overview nav item, empty states, status badges and a real `<label>` on every field. Plugin UI untouched — still self-contained react-only. `tsc --noEmit` clean, `vite build` clean, verified live in the browser (login → all 5 core pages → create department round-trips to the DB → theme toggle).
-
-## File map (core UI redesign)
-- `frontend/src/styles/tokens.css` — design tokens + base reset (new).
-- `frontend/src/styles/app.css` — sidebar shell, panel, table, form, badge, login (new).
-- `frontend/index.html` — font links + pre-paint theme script (dark default).
-- `frontend/src/Layout.tsx` — sidebar, theme toggle, shared `PageHead` / `Empty` / `ErrorNote`.
-- `frontend/src/main.tsx`, `pages/*.tsx` — classNames instead of inline styles.
+- **UI cho plugin mới** → đọc `docs/PLUGIN-UI.md`. Token lấy từ `frontend/src/styles/tokens.css`,
+  copy sang `plugins/<tên>/frontend/theme.css`, import bằng `./theme.css` (đường dẫn tương đối
+  nên chạy được cả host lẫn Docker mount `/plugins`).
+- Áp design system cho `plugins/opera_cloud/frontend/index.tsx` — hiện **100% inline style**
+  (0 `className`, 9 `style={{}}`). Cân nhắc `scripts/check-plugin-ui.mjs` chặn token lệch trong CI.
+- Tồn đọng: httpx2 TestClient fix, đổi seed admin password cho deploy thật.
 
 ## Decisions beyond brief
-- (Phases 1–7 unchanged — key: PUT partial-update, JSONB roles/privileges, export col width 20, expiry audit actor None, plugin import fallback names, `_MOUNTED` guard.)
-- No CSS framework — **overridden for core UI only**: core pages now use two hand-written
-  CSS files driven by design tokens (no Tailwind/unocss/build step added). Plugin UI stays
-  inline-styled and self-contained, per the iron rule.
-- Sidebar layout, not a top navbar: more plugins are expected, and a vertical list has room.
-- Dark mode is the default (`localStorage: ui-theme`; anything other than `light` = dark).
-- App-shell breakpoint is 900px, not the design system's 996px: a fixed 248px sidebar plus
-  wide tables needs to collapse earlier than the landing-page grids do.
-- Under 900px the sidebar becomes an off-canvas drawer opened by a burger button in a sticky
-  topbar. Closes on link click, scrim tap and Escape (focus returns to the burger). It uses
-  `visibility` rather than transform alone, so hidden links cannot be reached by Tab.
-- Tokens in localStorage (simplest per brief §8); refresh rotation handled server-side.
-- Plugin routes render inside Layout (inherit sidebar); each plugin route gets nested `<Route>` for children.
-- `tsconfig` `noUnusedLocals:false` — avoids friction with generated plugin stubs.
-- Plugin UI is react-only + self-contained (fetch + own `can()` via /core/auth/me); keep plugin UI dependency-free.
-- Scheduler gets **no explicit timezone** → APScheduler uses the process local timezone (container = UTC). Simplest option per brief §8, so no new config setting was added.
-- Scheduler construction is best-effort: if APScheduler import/init fails, `_build_scheduler()` returns `None`, jobs stay unregistered and the app still starts (BRIEF §5.3).
+- (P1–P7: PUT partial-update, JSONB roles/privileges, export col width 20, expiry audit actor
+  None, plugin import fallback names, `_MOUNTED` guard — chi tiết trong git history.)
+- Không CSS framework. Core dùng 2 file CSS tự viết + design token; plugin tự mang `theme.css`.
+- Sidebar, không phải navbar trên: nhiều plugin sẽ tới, danh sách dọc có chỗ.
+- Dark mode mặc định (`localStorage: ui-theme`). Dark là **đảo ramp** chứ không phải đảo class →
+  không cần `dark:` variant, không cần JS trong plugin.
+- Breakpoint app shell = 900px (không phải 996px): sidebar 248px + bảng rộng gấp sớm hơn.
+- Transition `visibility` dùng `0s duration + delay`; duration thật làm computed value kẹt ở
+  trạng thái đầu, drawer không trượt vào.
+
+## File map
+- `docs/PLUGIN-UI.md` — thứ tự đọc, token contract, class catalog, template, checklist.
+- `backend/app/main.py` — `_build_scheduler()`, lifespan scheduler, app logger handler.
+- `frontend/src/styles/tokens.css` — **nguồn token duy nhất** (copy sang plugin).
+- `frontend/src/styles/app.css` — shell, panel, table, form, badge, drawer, login.
+- `frontend/src/Layout.tsx` — sidebar + drawer + burger + theme toggle; `PageHead`/`Empty`/`ErrorNote`.
+- `frontend/index.html` — font + `data-theme` trước lúc paint. `main.tsx`, `pages/*.tsx` — core UI.
+- `plugins/opera_cloud/frontend/index.tsx` — ví dụ tham chiếu; **chưa** áp design system.
 
 ## How to run and test
-- `cd ~/apps/account-registry && docker compose up -d --build`
-- **No-Docker local run** (verified on Windows): native PostgreSQL 16 on `localhost:5433`, user `registry`, db `account_registry`; then `cd backend && alembic upgrade head && uvicorn app.main:app --port 8100`. Run `alembic` via its console script from `backend/` — `python -m alembic` fails because the local `backend/alembic/` folder shadows the installed package.
-- Login: `POST localhost:8100/api/v1/core/auth/login {"username":"admin","password":"Admin123!"}` (dev seed).
-- Frontend: open `localhost:8101/login` → admin/Admin123! → sidebar shows Users/Roles/Departments/Positions/Audit + Hello/Opera Cloud.
-- Frontend types+build: `cd frontend && npx tsc --noEmit && npm run build` (both clean).
-- Backend tests: `docker exec account-registry-backend-1 python -m pytest tests/ -q` (23 passed). Locally: `cd backend && python -m pytest tests/ -q` with `DATABASE_URL` exported.
-- Scheduler proof: startup log shows `app: scheduler started with 1 job(s)` (the opera_cloud 02:05 cron).
+- Docker: `docker compose up -d --build` → backend :8100, frontend :8101.
+- **Không Docker**: PostgreSQL 16 native ở `localhost:5433` (user `registry`, db
+  `account_registry` — xem `.env`), rồi `cd backend && alembic upgrade head &&
+  uvicorn app.main:app --port 8100`. Chạy `alembic` bằng console script từ `backend/`
+  (`python -m alembic` fail vì folder `backend/alembic/` che package).
+- Frontend dev: `cd frontend && VITE_PROXY_TARGET=http://localhost:8100 npm run dev` (:5173).
+- Test: `cd backend && python -m pytest tests/ -q` (23 passed), export `DATABASE_URL` trước.
+  `cd frontend && npx tsc --noEmit && npm run build` (cả hai sạch). Login dev `admin`/`Admin123!`.
+  Log startup của backend có `app: scheduler started with 1 job(s)`.
 
 ## Known issues
-- The scheduler assumes a single backend process. `uvicorn --workers N` (N>1) starts N schedulers, so a plugin cron fires N times.
-- Starlette TestClient deprecation warning (needs httpx2 later) — cosmetic.
-- SAWarning on OperaAccount double-import (loader name + `plugins.*` package) — harmless, last definition wins.
-- Seed admin password is dev-only; change ADMIN_PASSWORD in real deploys.
-- `docs/api.md` lists the hello ping as `/api/v1/plugins/hello/hello/ping`; the live route is `/api/v1/plugins/hello/ping`.
+- Scheduler giả định 1 process backend. `uvicorn --workers N` (N>1) → N scheduler → cron chạy N lần.
+- `opera_cloud/frontend/index.tsx` import `@tanstack/react-query` dù README cấm — vite alias nên
+  vẫn chạy, nhưng doc và code lệch nhau. Sửa khi áp design system cho plugin.
+- Test browser headless có `document.hidden = true` nên CSS transition bị đóng băng
+  (`currentTime = 0`); xác minh animation phải ép frame bằng `browser.screenshot`. Cosmetic:
+  TestClient deprecation (cần httpx2), SAWarning double-import, seed admin chỉ dùng dev.
